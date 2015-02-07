@@ -15,7 +15,7 @@ let Parser = ometa {
   style = "duration":k styleValue:v                                             -> [k, parseFloat(v)]
         | "text-color":k styleValue:v                                           -> [k, Utils.colorFromString(v)]
         | "text-alignment":k styleValue:v                                       -> [k, Utils.textAlignment(v)]
-        | styleName:c ?Utils.isValidColor(c)                                    -> ['background-color', Utils.colorFromString(c)]
+        | styleName:c ?Utils.isValidColor(c)                                    -> ['background', new Backgrounds.Color(Utils.colorFromString(c))]
         | spaces <letter (letter | digit | '-')+>:s ?Utils.isGravity(s) spaces  -> ['gravity', Utils.getGravity(s)]
         | spaces <letter (letter | digit | '-')+>:s ?Parser.isKeyword(s) spaces -> [s, true]
         | spaces <letter (letter | digit | '-')+>:k styleValue:v                -> [k, v],

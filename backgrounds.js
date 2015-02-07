@@ -34,6 +34,22 @@ Camera.prototype = {
   },
 };
 
+let Color = function(color) {
+  this._init(color);
+};
+Color.prototype = {
+  _init: function(color) {
+    this._color = color;
+  },
+  load: function() {
+  },
+  unload: function() {
+  },
+  attachContent: function(actor) {
+    actor.background_color = this._color;
+  },
+};
+
 let Image = function(filename) {
   this._init(filename);
 };
