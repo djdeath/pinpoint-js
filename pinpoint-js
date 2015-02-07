@@ -1,0 +1,8 @@
+#!/bin/sh
+
+GJS_PATH=.
+GJS_DISABLE_EXTRA_WARNINGS=1
+
+export GJS_PATH GJS_DISABLE_EXTRA_WARNINGS=1
+
+gjs pinpoint.js $@
