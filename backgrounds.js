@@ -6,24 +6,6 @@ const GdkPixbuf = imports.gi.GdkPixbuf;
 
 const Utils = imports.utils;
 
-// Some util functions
-let colorFromString = function(str) {
-  let [ret, color] = Clutter.Color.from_string(str);
-  return color;
-};
-
-let isValidColor = function(str) {
-  let [success, color] = Clutter.Color.from_string(str);
-  return success;
-};
-
-let isMimeType = function(filename, mime) {
-  let [type, uncertain] = Gio.content_type_guess(Utils.getFile(filename).get_path(),
-                                                 null);
-  return type.indexOf(mime) == 0;
-};
-
-
 let Null = function() {
 };
 Null.prototype = {

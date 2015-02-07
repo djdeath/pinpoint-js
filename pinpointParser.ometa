@@ -1,17 +1,24 @@
 const Clutter = imports.gi.Clutter;
 const Backgrounds = imports.backgrounds;
+const Utils = imports.utils;
 
 let Parser = ometa {
   spacesNoNl = (~'\n' space)*,
 
-  background = 'camera'                                                         -> ['background', new Backgrounds.Camera()]
-             | (~']' anything)+:f ?Backgrounds.isMimeType(f.join(''), 'image/') -> ['background', new Backgrounds.Image(f.join(''))]
-             | (~']' anything)+:f ?Backgrounds.isMimeType(f.join(''), 'video/') -> ['background', new Backgrounds.Video(f.join(''))],
-  style = "duration":k "=" (~']' anything)+:v                                     -> [k, parseFloat(v.join(''))]
-        | (~']' anything)+:c ?Backgrounds.isValidColor(c.join(''))                -> ['background-color', Backgrounds.colorFromString(c.join(''))]
-        | spaces <letter (letter | digit | '-')+>:s ?Parser.isGravity(s) spaces   -> ['gravity', Parser.getGravity(s)]
-        | spaces <letter (letter | digit | '-')+>:s ?Parser.isKeyword(s) spaces   -> [s, true]
-        | spaces <letter (letter | digit | '-')+>:k '=' (~']' anything)+:v        -> [k, v.join('')],
+  styleName = (~']' anything)+:n -> n.join(''),
+
+  background = 'camera'                                   -> ['background', new Backgrounds.Camera()]
+             | styleName:n ?Utils.isMimeType(n, 'image/') -> ['background', new Backgrounds.Image(n)]
+             | styleName:n ?Utils.isMimeType(n, 'video/') -> ['background', new Backgrounds.Video(n)],
+
+  styleValue = "=" (~']' anything)+:v                                           -> v.join(''),
+  style = "duration":k styleValue:v                                             -> [k, parseFloat(v)]
+        | "text-color":k styleValue:v                                           -> [k, Utils.colorFromString(v)]
+        | "text-alignment":k styleValue:v                                       -> [k, Utils.textAlignment(v)]
+        | styleName:c ?Utils.isValidColor(c)                                    -> ['background-color', Utils.colorFromString(c)]
+        | spaces <letter (letter | digit | '-')+>:s ?Utils.isGravity(s) spaces  -> ['gravity', Utils.getGravity(s)]
+        | spaces <letter (letter | digit | '-')+>:s ?Parser.isKeyword(s) spaces -> [s, true]
+        | spaces <letter (letter | digit | '-')+>:k styleValue:v                -> [k, v],
 
   property = '[' (style | background):p ']' -> p,
   headerProperty :d = spacesNoNl property:p appendProperty(d, p),
@@ -33,24 +40,6 @@ let Parser = ometa {
   document = newDocument():d shell (headerProperty(d) | space+)* slide+:sds end -> { properties: d.properties, slides: sds }
 };
 
-Parser._gravities = {
-  "top-left":     [Clutter.ActorAlign.START,  Clutter.ActorAlign.START],
-  "top":          [Clutter.ActorAlign.CENTER, Clutter.ActorAlign.START],
-  "top-right":    [Clutter.ActorAlign.END,    Clutter.ActorAlign.START],
-  "left":         [Clutter.ActorAlign.START,  Clutter.ActorAlign.CENTER],
-  "center":       [Clutter.ActorAlign.CENTER, Clutter.ActorAlign.CENTER],
-  "right":        [Clutter.ActorAlign.END,    Clutter.ActorAlign.CENTER],
-  "bottom-left":  [Clutter.ActorAlign.START,  Clutter.ActorAlign.END],
-  "bottom":       [Clutter.ActorAlign.CENTER, Clutter.ActorAlign.END],
-  "bottom-right": [Clutter.ActorAlign.END,  Clutter.ActorAlign.END],
-};
-Parser.isGravity = function(str) {
-  return this._gravities.hasOwnProperty(str);
-};
-Parser.getGravity = function(str) {
-  log('gravity ' + str + ' = ' + this._gravities[str]);
-  return this._gravities[str];
-};
 
 Parser._keywords = {
   "fill": true,

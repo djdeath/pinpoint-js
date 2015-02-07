@@ -4,6 +4,7 @@ const Clutter = imports.gi.Clutter;
 const ClutterGst = imports.gi.ClutterGst;
 const Gio = imports.gi.Gio;
 const Mainloop = imports.mainloop;
+const Pango = imports.gi.Pango;
 
 const Backgrounds = imports.backgrounds;
 const PinpointParser = imports.pinpointParser;
@@ -24,13 +25,15 @@ let addDefaultProperty = function(doc, prop, val) {
   if (!doc.properties[prop])
     doc.properties[prop] = val;
 };
-addDefaultProperty(document, 'text-color', 'white');
-addDefaultProperty(document, 'background-color', Backgrounds.colorFromString('black'));
+addDefaultProperty(document, 'text-color', Utils.colorFromString('white'));
+addDefaultProperty(document, 'background-color', Utils.colorFromString('black'));
 addDefaultProperty(document, 'background', new Backgrounds.Null());
 addDefaultProperty(document, 'font', 'Sans 60px');
-addDefaultProperty(document, 'gravity', [Clutter.ActorAlign.CENTER, Clutter.ActorAlign.CENTER]);
+addDefaultProperty(document, 'gravity', [Clutter.ActorAlign.CENTER,
+                                         Clutter.ActorAlign.CENTER]);
 addDefaultProperty(document, 'fill', false);
 addDefaultProperty(document, 'no-markup', false);
+addDefaultProperty(document, 'text-alignment', Pango.Alignment.LEFT);
 
 let getProperties = function(doc, slide) {
   let props = {};
@@ -127,8 +130,9 @@ let showSlide = function() {
   let text = _currentSlide.text = new Clutter.Text({
     text: str,
     font_name: props.font,
-    color: Backgrounds.colorFromString(props['text-color']),
+    color: props['text-color'],
     use_markup: !props['no-markup'],
+    line_alignment: props['text-alignment'],
   });
   bgActor.add_actor(text);
 
@@ -153,7 +157,6 @@ stage.connect('allocation-changed', function(actor, box, flags) {
 });
 
 stage.connect('key-press-event', function(actor, event) {
-  log(event.get_key_symbol());
   switch (event.get_key_symbol()) {
   case Clutter.KEY_Left: previousSlide(); break;
   case Clutter.KEY_Right: nextSlide(); break;
