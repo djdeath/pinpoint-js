@@ -61,20 +61,24 @@ Image.prototype = {
     this._content = new Clutter.Image();
   },
   load: function() {
-    let ios = this._file.open_readwrite(null);
-    let is = ios.get_input_stream();
-    let bytes = is.read_bytes(this._file.query_info('*',
-                                                    Gio.FileQueryInfoFlags.NONE,
-                                                    null).get_size(), null);
-    let loader = new GdkPixbuf.PixbufLoader();
-    loader.write_bytes(bytes);
-    loader.close();
-    let pixbuf = loader.get_pixbuf();
-    this._content.set_bytes(pixbuf.read_pixel_bytes(),
-                            pixbuf.get_has_alpha() ? Cogl.PixelFormat.RGBA_8888 : Cogl.PixelFormat.RGB_888,
-                            pixbuf.get_width(),
-                            pixbuf.get_height(),
-                            pixbuf.get_rowstride());
+    try {
+      let ios = this._file.open_readwrite(null);
+      let is = ios.get_input_stream();
+      let bytes = is.read_bytes(this._file.query_info('*',
+                                                      Gio.FileQueryInfoFlags.NONE,
+                                                      null).get_size(), null);
+      let loader = new GdkPixbuf.PixbufLoader();
+      loader.write_bytes(bytes);
+      loader.close();
+      let pixbuf = loader.get_pixbuf();
+      this._content.set_bytes(pixbuf.read_pixel_bytes(),
+                              pixbuf.get_has_alpha() ? Cogl.PixelFormat.RGBA_8888 : Cogl.PixelFormat.RGB_888,
+                              pixbuf.get_width(),
+                              pixbuf.get_height(),
+                              pixbuf.get_rowstride());
+    } catch (e) {
+      log('Error loading media: ' + e.message);
+    }
   },
   unload: function() {
     this._content = new Clutter.Image();
