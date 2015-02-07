@@ -91,6 +91,7 @@ let layoutText = function(box, element, gravities) {
 let _currentSlide = {
   index: 0,
   slide: null,
+  background: null,
   text: null,
 };
 
@@ -107,6 +108,10 @@ let relayoutSlideInBox = function(box) {
   layoutText(mbox, _currentSlide.text, props.gravity);
 };
 
+let blankSlide = function() {
+  _currentSlide.background.visible = !_currentSlide.background.visible;
+};
+
 let showSlide = function() {
   stage.remove_all_children();
 
@@ -115,7 +120,7 @@ let showSlide = function() {
 
   props.background.load();
 
-  let bgActor = new Clutter.Actor({
+  let bgActor = _currentSlide.background = new Clutter.Actor({
     x_align: Clutter.ActorAlign.FILL,
     y_align: Clutter.ActorAlign.FILL,
     x_expand: true,
@@ -167,6 +172,7 @@ stage.connect('key-press-event', function(actor, event) {
   case Clutter.KEY_space: nextSlide(); break;
   case Clutter.KEY_q:
   case Clutter.KEY_Escape: stage.hide(); Clutter.main_quit(); break;
+  case Clutter.KEY_b: blankSlide(); break;
   }
   return false;
 }.bind(this));
