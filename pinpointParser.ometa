@@ -14,8 +14,8 @@ let Parser = ometa {
         | spaces <letter (letter | digit | '-')+>:k '=' (~']' anything)+:v        -> [k, v.join('')],
 
   property = '[' (style | background):p ']' -> p,
-  headerProperty = property:p spaces        -> p,
-  slideProperty = property:p spacesNoNl     -> p,
+  headerProperty :d = spacesNoNl property:p appendProperty(d, p),
+  slideProperty :s = spacesNoNl property:p appendProperty(s, p),
 
   comment = fromTo('#', '\n'):s        -> s.slice(1),
   content = ((~('\n' | '-''-') anything)*:s '\n') -> (s.join('') + '\n'),
@@ -23,13 +23,14 @@ let Parser = ometa {
   slideContent :s = (comment:cmt appendComment(s, cmt) |
                      content:cnt appendContent(s, cnt))+ -> s,
 
-  header = (headerProperty)*,
-
   slide = newSlide():s
-          '-''-' spacesNoNl slideProperty+:ps appendProperties(s, ps) '\n'
+          '-''-' spacesNoNl slideProperty(s)* spacesNoNl '\n'
           slideContent(s) -> s,
 
-  document = newDocument():d headerProperty*:ps appendProperties(d, ps) slide+:sds end -> { properties: d.properties, slides: sds }
+  shell = '#''!' (~space anything)* (~'\n' anything)* '\n'
+        | empty,
+
+  document = newDocument():d shell (headerProperty(d) | space+)* slide+:sds end -> { properties: d.properties, slides: sds }
 };
 
 Parser._gravities = {
@@ -75,10 +76,8 @@ Parser.appendComment = function(slide, comment) {
 Parser.appendContent = function(slide, content) {
   slide.content.push(content);
 };
-Parser.appendProperties = function(slide, properties) {
-  properties.map(function(tuple) {
-    slide.properties[tuple[0]] = tuple[1];
-  });
+Parser.appendProperty = function(container, tuple) {
+  container.properties[tuple[0]] = tuple[1];
 };
 
 let parse = function(str) {
@@ -97,7 +96,7 @@ let parse = function(str) {
   let document;
   try {
     document = Parser.matchAll(str, 'document');
-    log(JSON.stringify(document, null, 2));
+    //log(JSON.stringify(document, null, 2));
   } catch (e) {
     let pos = indexToPosition(str, e.idx);
     log('Parsing error at : line ' + pos.line + ' offset ' + pos.offset);
