@@ -160,8 +160,11 @@ stage.connect('allocation-changed', function(actor, box, flags) {
 stage.connect('destroy', function(actor) { Clutter.main_quit(); });
 stage.connect('key-press-event', function(actor, event) {
   switch (event.get_key_symbol()) {
+  case Clutter.KEY_Up:
   case Clutter.KEY_Left: previousSlide(); break;
-  case Clutter.KEY_Right: nextSlide(); break;
+  case Clutter.KEY_Down:
+  case Clutter.KEY_Right:
+  case Clutter.KEY_space: nextSlide(); break;
   case Clutter.KEY_q:
   case Clutter.KEY_Escape: stage.hide(); Clutter.main_quit(); break;
   }
