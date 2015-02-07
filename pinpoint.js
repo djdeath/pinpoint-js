@@ -173,6 +173,7 @@ stage.connect('key-press-event', function(actor, event) {
   case Clutter.KEY_q:
   case Clutter.KEY_Escape: stage.hide(); Clutter.main_quit(); break;
   case Clutter.KEY_b: blankSlide(); break;
+  case Clutter.KEY_F11: stage.set_fullscreen(!stage.fullscreen_set); break;
   }
   return false;
 }.bind(this));
