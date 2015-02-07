@@ -5,20 +5,16 @@ const Utils = imports.utils;
 let Parser = ometa {
   spacesNoNl = (~'\n' space)*,
 
-  styleName = (~']' anything)+:n -> n.join(''),
+  bgValue = (~']' anything)+:n -> n.join(''),
+  background = 'camera'                                 -> ['background', new Backgrounds.Camera()]
+             | bgValue:n ?Utils.isMimeType(n, 'image/') -> ['background', new Backgrounds.Image(n)]
+             | bgValue:n ?Utils.isMimeType(n, 'video/') -> ['background', new Backgrounds.Video(n)]
+             | bgValue:n ?Utils.isValidColor(n)         -> ['background', new Backgrounds.Color(Utils.colorFromString(n))],
 
-  background = 'camera'                                   -> ['background', new Backgrounds.Camera()]
-             | styleName:n ?Utils.isMimeType(n, 'image/') -> ['background', new Backgrounds.Image(n)]
-             | styleName:n ?Utils.isMimeType(n, 'video/') -> ['background', new Backgrounds.Video(n)],
-
-  styleValue = "=" (~']' anything)+:v                                           -> v.join(''),
-  style = "duration":k styleValue:v                                             -> [k, parseFloat(v)]
-        | "text-color":k styleValue:v                                           -> [k, Utils.colorFromString(v)]
-        | "text-alignment":k styleValue:v                                       -> [k, Utils.textAlignment(v)]
-        | styleName:c ?Utils.isValidColor(c)                                    -> ['background', new Backgrounds.Color(Utils.colorFromString(c))]
-        | spaces <letter (letter | digit | '-')+>:s ?Utils.isGravity(s) spaces  -> ['gravity', Utils.getGravity(s)]
-        | spaces <letter (letter | digit | '-')+>:s ?Parser.isKeyword(s) spaces -> [s, true]
-        | spaces <letter (letter | digit | '-')+>:k styleValue:v                -> [k, v],
+  styleName = spaces <letter (letter | digit | '-')+>,
+  styleValue = styleName:k "=" (~']' anything)+:v -> [k, v.join('')]
+             | styleName:k                        -> [k, k],
+  style = styleValue:v ?Parser.isKeyword(v[0])    -> Parser.getValue(v[0], v[1]),
 
   property = '[' (style | background):p ']' -> p,
   headerProperty :d = spacesNoNl property:p appendProperty(d, p),
@@ -40,13 +36,43 @@ let Parser = ometa {
   document = newDocument():d shell (headerProperty(d) | space+)* slide+:sds end -> { properties: d.properties, slides: sds }
 };
 
+let returnValue = function(value) { return function() { return value; }; };
+let identity = function(value) { return value; };
+let colorBackground = function(value) { return new Backgrounds.Color(Utils.colorFromString); };
 
 Parser._keywords = {
-  "fill": true,
-  "no-markup": true,
+  "fill": { name: "background-gravity", getValue: returnValue(Clutter.ContentGravity.RESIZE_FILL) },
+  "fit": { name: "background-gravity", getValue: returnValue(Clutter.ContentGravity.RESIZE_ASPECT) },
+  "font": { name: "font", getValue: identity },
+  "markup": { name: "use-markup", getValue: returnValue(true) },
+  "no-markup": { name: "use-markup", getValue: returnValue(false) },
+  "duration": { name: "duration", getValue: parseFloat },
+  "text-color": { name: "text-color", getValue: Utils.colorFromString },
+  "text-align": { name: "text-align", getValue: Utils.getTextAlignment },
+  "shading-opacity": { name: "shading-opacity", getValue: parseFloat },
+  "transition": { name: "transition", getValue: identity },
+  "command":  { name: "command", getValue: identity },
+  "gravity":  { name: "gravity", getValue: Utils.getGravity },
 };
-Parser.isKeyword = function(str) {
-  return this._keywords.hasOwnProperty(str);
+Parser.isKeyword = function(key) {
+  return (this._keywords.hasOwnProperty(key) ||
+          Utils.isGravity(key));
+};
+Parser.getValueName = function(key) {
+  if (this._keywords.hasOwnProperty(key))
+    return this._keywords[key].name;
+  else if (Utils.isGravity(key))
+    return "gravity";
+  return key;
+};
+Parser.getValue = function(key, value) {
+  let nkey = this.getValueName(key);
+  let nvalue = value;
+  if (this._keywords.hasOwnProperty(key))
+    nvalue = this._keywords[key].getValue(value);
+  else if (this._keywords.hasOwnProperty(nkey))
+    nvalue = this._keywords[nkey].getValue(value);
+  return [nkey, nvalue];
 };
 
 Parser.newDocument = function() {

@@ -18,10 +18,10 @@ let _textAlignments = {
   "right":   Pango.Alignment.RIGHT,
 };
 let isTextAlignment = function(str) {
-  return this._textAlignments.hasOwnProperty(str);
+  return _textAlignments.hasOwnProperty(str);
 };
 let getTextAlignment = function(str) {
-  return this._textAlignments[str];
+  return _textAlignments[str];
 };
 
 //
@@ -38,10 +38,10 @@ let _gravities = {
   "bottom-right": [Clutter.ActorAlign.END,  Clutter.ActorAlign.END],
 };
 let isGravity = function(str) {
-  return this._gravities.hasOwnProperty(str);
+  return _gravities.hasOwnProperty(str);
 };
 let getGravity = function(str) {
-  return this._gravities[str];
+  return _gravities[str];
 };
 
 //

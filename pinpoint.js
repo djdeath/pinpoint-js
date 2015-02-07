@@ -22,23 +22,24 @@ let document = PinpointParser.parse(source);
 let properties = [];
 let addDefaultProperty = function(doc, prop, val) {
   properties.push(prop);
-  if (!doc.properties[prop])
+  if (doc.properties[prop] === undefined)
     doc.properties[prop] = val;
 };
 addDefaultProperty(document, 'text-color', Utils.colorFromString('white'));
 addDefaultProperty(document, 'background-color', Utils.colorFromString('black'));
 addDefaultProperty(document, 'background', new Backgrounds.Null());
 addDefaultProperty(document, 'font', 'Sans 60px');
+addDefaultProperty(document, 'background-gravity', Clutter.ContentGravity.RESIZE_ASPECT);
 addDefaultProperty(document, 'gravity', [Clutter.ActorAlign.CENTER,
                                          Clutter.ActorAlign.CENTER]);
 addDefaultProperty(document, 'fill', false);
-addDefaultProperty(document, 'no-markup', false);
-addDefaultProperty(document, 'text-alignment', Pango.Alignment.LEFT);
+addDefaultProperty(document, 'use-markup', true);
+addDefaultProperty(document, 'text-align', Pango.Alignment.LEFT);
 
 let getProperties = function(doc, slide) {
   let props = {};
   properties.forEach(function(name) {
-    if (slide.properties[name])
+    if (slide.properties[name] !== undefined)
       props[name] = slide.properties[name];
     else
       props[name] = doc.properties[name];
@@ -120,7 +121,7 @@ let showSlide = function() {
     x_expand: true,
     y_expand: true,
     background_color: props['background-color'],
-    content_gravity: Clutter.ContentGravity.RESIZE_ASPECT,
+    content_gravity: props['background-gravity'],
   });
   props.background.attachContent(bgActor);
   stage.add_actor(bgActor);
@@ -131,8 +132,8 @@ let showSlide = function() {
     text: str,
     font_name: props.font,
     color: props['text-color'],
-    use_markup: !props['no-markup'],
-    line_alignment: props['text-alignment'],
+    use_markup: props['use-markup'],
+    line_alignment: props['text-align'],
   });
   bgActor.add_actor(text);
 
