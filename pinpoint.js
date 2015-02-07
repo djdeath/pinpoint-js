@@ -7,10 +7,13 @@ const Mainloop = imports.mainloop;
 
 const Backgrounds = imports.backgrounds;
 const PinpointParser = imports.pinpointParser;
+const Utils = imports.utils;
 
 ClutterGst.init(null, null);
 
 let file = Gio.File.new_for_path(ARGV[0]);
+Utils.setDirectory(file.get_parent());
+
 let [, source] = file.load_contents(null);
 let source = '' + source;
 let document = PinpointParser.parse(source);

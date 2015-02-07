@@ -4,6 +4,8 @@ const Cogl = imports.gi.Cogl;
 const Gio = imports.gi.Gio;
 const GdkPixbuf = imports.gi.GdkPixbuf;
 
+const Utils = imports.utils;
+
 // Some util functions
 let colorFromString = function(str) {
   let [ret, color] = Clutter.Color.from_string(str);
@@ -16,7 +18,8 @@ let isValidColor = function(str) {
 };
 
 let isMimeType = function(filename, mime) {
-  let [type, uncertain] = Gio.content_type_guess('/home/djdeath/src/pinpoint/' + filename, null);
+  let [type, uncertain] = Gio.content_type_guess(Utils.getFile(filename).get_path(),
+                                                 null);
   return type.indexOf(mime) == 0;
 };
 
@@ -54,7 +57,7 @@ let Image = function(filename) {
 };
 Image.prototype = {
   _init: function(filename) {
-    this._file = Gio.File.new_for_path('/home/djdeath/src/pinpoint/' + filename);
+    this._file = Utils.getFile(filename);
     this._content = new Clutter.Image();
   },
   load: function() {
@@ -86,7 +89,7 @@ let Video = function(filename) {
 };
 Video.prototype = {
   _init: function(filename) {
-    this._file = Gio.File.new_for_path('/home/djdeath/src/pinpoint/' + filename);
+    this._file = Utils.getFile(filename);
     this._content = new ClutterGst.Content();
     this._player = new ClutterGst.Playback();
     this._player.set_filename(this._file.get_path());
