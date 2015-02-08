@@ -91,6 +91,7 @@ let layoutText = function(box, element, gravities) {
 let _currentSlide = {
   index: 0,
   slide: null,
+  main: null,
   background: null,
   text: null,
 };
@@ -106,10 +107,12 @@ let relayoutSlideInBox = function(box) {
   let props = getProperties(document, _currentSlide.slide);
   let mbox = marginBox(box);
   layoutText(mbox, _currentSlide.text, props.gravity);
+  _currentSlide.background.width = box.width;
+  _currentSlide.background.height = box.height;
 };
 
 let blankSlide = function() {
-  _currentSlide.background.visible = !_currentSlide.background.visible;
+  _currentSlide.main.visible = !_currentSlide.main.visible;
 };
 
 let showSlide = function() {
@@ -120,6 +123,14 @@ let showSlide = function() {
 
   props.background.load();
 
+  let main = _currentSlide.main = new Clutter.Actor({
+    x_align: Clutter.ActorAlign.FILL,
+    y_align: Clutter.ActorAlign.FILL,
+    x_expand: true,
+    y_expand: true,
+  });
+  stage.add_actor(main);
+
   let bgActor = _currentSlide.background = new Clutter.Actor({
     x_align: Clutter.ActorAlign.FILL,
     y_align: Clutter.ActorAlign.FILL,
@@ -129,7 +140,7 @@ let showSlide = function() {
     content_gravity: props['background-gravity'],
   });
   props.background.attachContent(bgActor);
-  stage.add_actor(bgActor);
+  main.add_actor(bgActor);
 
   let str = slide.content.join('').trim();
   //log('text=|' + str + '|');
@@ -140,7 +151,7 @@ let showSlide = function() {
     use_markup: props['use-markup'],
     line_alignment: props['text-align'],
   });
-  bgActor.add_actor(text);
+  main.add_actor(text);
 
   relayoutSlideInBox(stage);
 };
