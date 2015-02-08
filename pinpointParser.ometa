@@ -96,26 +96,5 @@ Parser.appendProperty = function(container, tuple) {
 };
 
 let parse = function(str) {
-  let indexToPosition = function(source, idx) {
-    let linePos = 0, lineNum = 0;
-    for (let i = 0; i < idx; i++) {
-      if (source.charAt(i) == '\n') {
-        linePos = i;
-        lineNum++;
-      }
-    }
-    return { line: lineNum + 1,
-             offset: idx - linePos };
-  };
-
-  let document;
-  try {
-    document = Parser.matchAll(str, 'document');
-    //log(JSON.stringify(document, null, 2));
-  } catch (e) {
-    let pos = indexToPosition(str, e.idx);
-    log('Parsing error at : line ' + pos.line + ' offset ' + pos.offset);
-    throw e;
-  }
-  return document;
+  return Parser.matchAll(str, 'document');
 };

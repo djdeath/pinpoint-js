@@ -12,12 +12,23 @@ const Utils = imports.utils;
 
 ClutterGst.init(null, null);
 
-let file = Gio.File.new_for_path(ARGV[0]);
-Utils.setDirectory(file.get_parent());
+if (ARGV.length < 1)
+  throw "need at least one argument";
 
-let [, source] = file.load_contents(null);
-let source = '' + source;
-let document = PinpointParser.parse(source);
+let document;
+try {
+  let file = Gio.File.new_for_path(ARGV[0]);
+  Utils.setDirectory(file.get_parent());
+  let [, source] = file.load_contents(null);
+  document = PinpointParser.parse('' + source);
+} catch (e) {
+  if (e.idx !== undefined) {
+    let pos = Utils.indexToPosition(str, e.idx);
+    log('Parsing error at : line ' + pos.line + ' offset ' + pos.offset);
+  } else
+    log(e.message);
+  throw e;
+}
 
 let properties = [];
 let addDefaultProperty = function(doc, prop, val) {

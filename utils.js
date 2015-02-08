@@ -61,3 +61,17 @@ let isMimeType = function(filename, mime) {
                                                  null);
   return type.indexOf(mime) == 0;
 };
+
+//
+
+let indexToPosition = function(source, idx) {
+  let linePos = 0, lineNum = 0;
+  for (let i = 0; i < idx; i++) {
+    if (source.charAt(i) == '\n') {
+      linePos = i;
+      lineNum++;
+    }
+  }
+  return { line: lineNum + 1,
+           offset: idx - linePos };
+};
