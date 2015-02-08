@@ -20,7 +20,7 @@ let _textAlignments = {
 let isTextAlignment = function(str) {
   return _textAlignments.hasOwnProperty(str);
 };
-let getTextAlignment = function(str) {
+let textAlignmentFromString = function(str) {
   return _textAlignments[str];
 };
 
@@ -40,7 +40,7 @@ let _gravities = {
 let isGravity = function(str) {
   return _gravities.hasOwnProperty(str);
 };
-let getGravity = function(str) {
+let gravityFromString = function(str) {
   return _gravities[str];
 };
 
@@ -51,7 +51,7 @@ let colorFromString = function(str) {
   return color;
 };
 
-let isValidColor = function(str) {
+let isColor = function(str) {
   let [success, color] = Clutter.Color.from_string(str);
   return success;
 };

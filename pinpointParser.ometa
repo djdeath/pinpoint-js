@@ -9,7 +9,7 @@ let Parser = ometa {
   background = 'camera'                                 -> ['background', new Backgrounds.Camera()]
              | bgValue:n ?Utils.isMimeType(n, 'image/') -> ['background', new Backgrounds.Image(n)]
              | bgValue:n ?Utils.isMimeType(n, 'video/') -> ['background', new Backgrounds.Video(n)]
-             | bgValue:n ?Utils.isValidColor(n)         -> ['background', new Backgrounds.Color(Utils.colorFromString(n))],
+             | bgValue:n ?Utils.isColor(n)              -> ['background', new Backgrounds.Color(Utils.colorFromString(n))],
 
   styleName = spaces <letter (letter | digit | '-')+>,
   styleValue = styleName:k "=" (~']' anything)+:v -> [k, v.join('')]
@@ -48,11 +48,11 @@ Parser._keywords = {
   "no-markup": { name: "use-markup", getValue: returnValue(false) },
   "duration": { name: "duration", getValue: parseFloat },
   "text-color": { name: "text-color", getValue: Utils.colorFromString },
-  "text-align": { name: "text-align", getValue: Utils.getTextAlignment },
+  "text-align": { name: "text-align", getValue: Utils.textAlignmentFromString },
   "shading-opacity": { name: "shading-opacity", getValue: parseFloat },
   "transition": { name: "transition", getValue: identity },
   "command":  { name: "command", getValue: identity },
-  "gravity":  { name: "gravity", getValue: Utils.getGravity },
+  "gravity":  { name: "gravity", getValue: Utils.gravityFromString },
 };
 Parser.isKeyword = function(key) {
   return (this._keywords.hasOwnProperty(key) ||
