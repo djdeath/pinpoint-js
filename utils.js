@@ -46,6 +46,18 @@ let gravityFromString = function(str) {
 
 //
 
+let isAnimationMode = function(str) {
+  let s = str.toUpperCase().replace('-', '_');
+  return Clutter.AnimationMode[s] != undefined;
+};
+
+let animationModeFromString = function(str) {
+  let s = str.toUpperCase().replace('-', '_');
+  return Clutter.AnimationMode[s];
+};
+
+//
+
 let colorFromString = function(str) {
   let [ret, color] = Clutter.Color.from_string(str);
   return color;
