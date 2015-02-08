@@ -99,13 +99,17 @@ let layoutText = function(box, element, gravities) {
 };
 
 //
-let _currentSlide = {
-  index: 0,
-  slide: null,
-  main: null,
-  background: null,
-  text: null,
-};
+let _slides = [];
+let _maxLoadedSlides = 5;
+
+//
+let _currentSlide = -1;
+let currentSlide = function() {
+  for (let i = 0; i < _slides.length; i++)
+    if (_slides[i].index == _currentSlide)
+      return _slides[i];
+  return null;
+}
 
 let marginBox = function(box) {
   return { x: box.width * 0.05,
@@ -114,72 +118,96 @@ let marginBox = function(box) {
            height: box.height * 0.90, };
 };
 
-let relayoutSlideInBox = function(box) {
-  let props = getProperties(document, _currentSlide.slide);
+let relayoutSlideInBox = function(slide, box) {
+  let props = getProperties(document, slide.slideDef);
   let mbox = marginBox(box);
-  layoutText(mbox, _currentSlide.text, props.gravity);
-  _currentSlide.background.width = box.width;
-  _currentSlide.background.height = box.height;
+  layoutText(mbox, slide.text, props.gravity);
+  slide.background.width = box.width;
+  slide.background.height = box.height;
 };
 
-let blankSlide = function() {
-  _currentSlide.main.visible = !_currentSlide.main.visible;
+let blankSlide = function(slide) {
+  slide.main.visible = !slide.main.visible;
 };
 
-let showSlide = function() {
-  stage.remove_all_children();
+let loadSlide = function(index) {
+  for (let i = 0; i < _slides.length; i++)
+    if (_slides[i].index == index)
+      return _slides[i];
 
-  let slide = _currentSlide.slide = document.slides[_currentSlide.index];
-  let props = getProperties(document, slide);
+  let slideDef = document.slides[index];
+  let props = getProperties(document, slideDef);
+  let slide = { index: index,
+                slideDef: slideDef,
+                main: new Clutter.Actor({
+                  x_align: Clutter.ActorAlign.FILL,
+                  y_align: Clutter.ActorAlign.FILL,
+                  x_expand: true,
+                  y_expand: true,
+                }),
+                background: new Clutter.Actor({
+                  x_align: Clutter.ActorAlign.FILL,
+                  y_align: Clutter.ActorAlign.FILL,
+                  x_expand: true,
+                  y_expand: true,
+                  background_color: props['background-color'],
+                  content_gravity: props['background-gravity'],
+                }),
+                text: new Clutter.Text({
+                  text: slideDef.content.join('').trim(),
+                  font_name: props.font,
+                  color: props['text-color'],
+                  use_markup: props['use-markup'],
+                  line_alignment: props['text-align'],
+                }), };
 
   props.background.load();
+  props.background.attachContent(slide.background);
 
-  let main = _currentSlide.main = new Clutter.Actor({
-    x_align: Clutter.ActorAlign.FILL,
-    y_align: Clutter.ActorAlign.FILL,
-    x_expand: true,
-    y_expand: true,
-  });
-  stage.add_actor(main);
+  slide.main.add_actor(slide.background);
+  slide.main.add_actor(slide.text);
+  stage.add_actor(slide.main);
 
-  let bgActor = _currentSlide.background = new Clutter.Actor({
-    x_align: Clutter.ActorAlign.FILL,
-    y_align: Clutter.ActorAlign.FILL,
-    x_expand: true,
-    y_expand: true,
-    background_color: props['background-color'],
-    content_gravity: props['background-gravity'],
-  });
-  props.background.attachContent(bgActor);
-  main.add_actor(bgActor);
+  slide.main.hide();
 
-  let str = slide.content.join('').trim();
-  //log('text=|' + str + '|');
-  let text = _currentSlide.text = new Clutter.Text({
-    text: str,
-    font_name: props.font,
-    color: props['text-color'],
-    use_markup: props['use-markup'],
-    line_alignment: props['text-align'],
-  });
-  main.add_actor(text);
+  _slides.push(slide);
 
-  relayoutSlideInBox(stage);
+  return slide;
+};
+
+let loadSlides = function(index) {
+  let delta = Math.round(_maxLoadedSlides / 2),
+      low = Math.max(0, index - delta),
+      up = Math.min(document.slides.length - 1, low + _maxLoadedSlides);
+
+  for (let i = low; i < up; i++)
+    relayoutSlideInBox(loadSlide(i), stage);
+};
+
+let showSlide = function(index) {
+  let old = currentSlide();
+  if (old) {
+    old.main.hide();
+  }
+
+  loadSlide(index);
+  _currentSlide = index;
+  currentSlide().main.show();
+
+  relayoutSlideInBox(currentSlide(), stage);
 };
 let previousSlide = function() {
-  _currentSlide.index = Math.max(0, _currentSlide.index - 1);
-  showSlide();
+  showSlide(Math.max(0, currentSlide().index - 1));
 };
 let nextSlide = function() {
-  _currentSlide.index = Math.min(document.slides.length - 1, _currentSlide.index + 1);
-  showSlide();
+  showSlide(Math.min(document.slides.length - 1, currentSlide().index + 1));
 };
 
 
 stage.connect('allocation-changed', function(actor, box, flags) {
   let b = { x: box.x1, y: box.y1, width: box.get_width(), height: box.get_height(), };
   Mainloop.timeout_add(0, function() {
-    relayoutSlideInBox(b);
+    relayoutSlideInBox(currentSlide(), b);
     return false;
   }.bind(this));
 });
@@ -193,13 +221,14 @@ stage.connect('key-press-event', function(actor, event) {
   case Clutter.KEY_Right:
   case Clutter.KEY_space: nextSlide(); break;
   case Clutter.KEY_q:
-  case Clutter.KEY_Escape: stage.hide(); Clutter.main_quit(); break;
-  case Clutter.KEY_b: blankSlide(); break;
+  case Clutter.KEY_Escape: stage.destroy(); Clutter.main_quit(); break;
+  case Clutter.KEY_b: blankSlide(currentSlide()); break;
   case Clutter.KEY_F11: stage.set_fullscreen(!stage.fullscreen_set); break;
   }
   return false;
 }.bind(this));
 
-showSlide();
+loadSlides(0);
+showSlide(0);
 
 Clutter.main();
