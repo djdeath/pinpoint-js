@@ -87,3 +87,12 @@ let indexToPosition = function(source, idx) {
   return { line: lineNum + 1,
            offset: idx - linePos };
 };
+
+//
+
+let forEachKeyVal = function(object, callback) {
+  for (let k in object) {
+    if (object.hasOwnProperty(k))
+      callback(k, object[k]);
+  }
+};
