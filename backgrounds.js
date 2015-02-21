@@ -11,6 +11,7 @@ let Null = function() {
 Null.prototype = {
   load: function() {},
   unload: function() {},
+  setVisibility: function(value) {},
   attachContent: function(actor) {},
 };
 
@@ -29,6 +30,9 @@ Camera.prototype = {
   unload: function() {
     this._camera.set_playing(false);
   },
+  setVisibility: function(value) {
+    this._camera.set_playing(value);
+  },
   attachContent: function(actor) {
     actor.content = this._content;
   },
@@ -45,6 +49,7 @@ Color.prototype = {
   },
   unload: function() {
   },
+  setVisibility: function(value) {},
   attachContent: function(actor) {
     actor.background_color = this._color;
   },
@@ -70,7 +75,8 @@ Image.prototype = {
       loader.close();
       let pixbuf = loader.get_pixbuf();
       this._content.set_bytes(pixbuf.read_pixel_bytes(),
-                              pixbuf.get_has_alpha() ? Cogl.PixelFormat.RGBA_8888 : Cogl.PixelFormat.RGB_888,
+                              pixbuf.get_has_alpha() ?
+                              Cogl.PixelFormat.RGBA_8888 : Cogl.PixelFormat.RGB_888,
                               pixbuf.get_width(),
                               pixbuf.get_height(),
                               pixbuf.get_rowstride());
@@ -81,6 +87,7 @@ Image.prototype = {
   unload: function() {
     this._content = new Clutter.Image();
   },
+  setVisibility: function(value) {},
   attachContent: function(actor) {
     actor.content = this._content;
   },
@@ -93,15 +100,19 @@ Video.prototype = {
   _init: function(filename) {
     this._file = Utils.getFile(filename);
     this._content = new ClutterGst.Content();
+  },
+  load: function() {
     this._player = new ClutterGst.Playback();
     this._player.set_filename(this._file.get_path());
     this._content.player = this._player;
   },
-  load: function() {
-    this._player.set_playing(true);
-  },
   unload: function() {
     this._player.set_playing(false);
+    this._player = null;
+    this._content.player = null;
+  },
+  setVisibility: function(value) {
+    this._player.set_playing(value);
   },
   attachContent: function(actor) {
     actor.content = this._content;

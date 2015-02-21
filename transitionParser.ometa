@@ -1,0 +1,28 @@
+const Utils = imports.utils;
+
+let Parser = ometa {
+  name = spaces <letter (letter | '-')+>,
+  number = spaces <'-'? digit+ ('.' digit+)?>:f -> parseFloat(f),
+
+  animation = name:a ?Utils.isAnimationMode(a) -> Utils.animationModeFromString(a),
+
+  property :actor =
+    name:p ( animation:a "(" number:n ")" -> { a: a, n: n } |
+             number:n -> { a: Utils.animationModeFromString("linear"),
+                           n: n} ):v
+    addProperty(actor, p, { animation: v.a, value: v.n }),
+
+  actorState :state =
+    name:n "->" newObject:ret property(ret)* addProperty(state, n, ret),
+
+  state :transition =
+    name:n "=>" newObject:ret actorState(ret)* addProperty(transition, n, ret),
+
+  transition = newObject:ret state(ret)* spaces end -> ret
+};
+Parser.newObject = function() { return {}; };
+Parser.addProperty = function(o, p, v) { o[p] = v; };
+
+let parse = function(str) {
+  return Parser.matchAll(str, 'transition');
+};

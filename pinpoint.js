@@ -8,6 +8,7 @@ const Pango = imports.gi.Pango;
 
 const Backgrounds = imports.backgrounds;
 const PinpointParser = imports.pinpointParser;
+const Transition = imports.transition;
 const Utils = imports.utils;
 
 ClutterGst.init(null, null);
@@ -36,16 +37,25 @@ let addDefaultProperty = function(doc, prop, val) {
   if (doc.properties[prop] === undefined)
     doc.properties[prop] = val;
 };
-addDefaultProperty(document, 'text-color', Utils.colorFromString('white'));
-addDefaultProperty(document, 'background-color', Utils.colorFromString('black'));
+addDefaultProperty(document, 'text_color', Utils.colorFromString('white'));
+addDefaultProperty(document, 'background_color', Utils.colorFromString('black'));
 addDefaultProperty(document, 'background', new Backgrounds.Null());
 addDefaultProperty(document, 'font', 'Sans 60px');
-addDefaultProperty(document, 'background-gravity', Clutter.ContentGravity.RESIZE_ASPECT);
+addDefaultProperty(document, 'background_gravity', [Clutter.ActorAlign.CENTER,
+                                                    Clutter.ActorAlign.CENTER]);
+addDefaultProperty(document, 'background_scaling', 'fit');
 addDefaultProperty(document, 'gravity', [Clutter.ActorAlign.CENTER,
                                          Clutter.ActorAlign.CENTER]);
 addDefaultProperty(document, 'fill', false);
-addDefaultProperty(document, 'use-markup', true);
-addDefaultProperty(document, 'text-align', Pango.Alignment.LEFT);
+addDefaultProperty(document, 'use_markup', true);
+addDefaultProperty(document, 'text_align', Pango.Alignment.LEFT);
+addDefaultProperty(document, 'transition', Transition.Default);
+addDefaultProperty(document, 'shading_opacity', 168);
+addDefaultProperty(document, 'shading_color', Utils.colorFromString('black'));
+
+document.properties['background'].load();
+document.properties['background'].load = function() {};
+document.properties['background'].unload = function() {};
 
 let getProperties = function(doc, slide) {
   let props = {};
@@ -63,7 +73,7 @@ let stage = new Clutter.Stage({
   height: 480,
   layout_manager: new Clutter.BinLayout(),
   user_resizable: true,
-  background_color: new Clutter.Color(), // Black
+  background_color: Utils.colorFromString('black'),
   title: 'Pinpoint-js presentation'
 });
 stage.show();
@@ -80,7 +90,40 @@ let positionForGravity = function(position, container, gravity) {
   return -1;
 };
 
-let layoutText = function(box, element, gravities) {
+let layoutBackground = function(element, box, scaling, gravities) {
+  let [, w, h] = element.content.get_preferred_size();
+  element.width = w;
+  element.height = h;
+  if (w == 0 || h == 0) return;
+
+  let w_scale = box.width / w,
+      h_scale = box.height / h;
+
+  if (scaling == 'fill') {
+      element.scale_x = element.scale_y = (w_scale > h_scale) ? w_scale : h_scale;
+  } else if (scaling == 'fit') {
+    element.scale_x = element.scale_y = (w_scale < h_scale) ? w_scale : h_scale;
+  } else if (scaling == 'unscaled') {
+    element.scale_x = element.scale_y = (w_scale < h_scale) ? w_scale : h_scale;
+    if (element.scale_x > 1.0)
+      element.scale_x = element.scale_y = 1.0;
+  } else if (scaling == 'stretch') {
+    element.scale_x = w_scale;
+    element.scale_y = h_scale;
+  }
+
+  element.x = positionForGravity(element.width * element.scale_x,
+                                 { start: box.x, end: box.x + box.width, },
+                                 gravities[0]);
+  element.y = positionForGravity(element.height * element.scale_y,
+                                 { start: box.y, end: box.y + box.height, },
+                                 gravities[1]);
+
+  log('background=' + Utils.boxToString(element) + ' - box=' + Utils.boxToString(box));
+
+};
+
+let layoutText = function(element, box, gravities) {
   //log('layout text in : ' + box.width + 'x' + box.height + ' @ ' + box.x + 'x' + box.y);
   let x, y;
   let [, , w, h] = element.get_preferred_size();
@@ -96,6 +139,19 @@ let layoutText = function(box, element, gravities) {
                                  { start: box.y,
                                    end: box.y + box.height, },
                                  gravities[1]);
+  return { x: element.x,
+           y: element.y,
+           width: element.width * scale,
+           height: element.height * scale, };
+};
+
+let layoutShading = function(element, text, box) {
+  let padding = 0.01 * box.width;
+
+  element.x = text.x - padding;
+  element.y = text.y - padding;
+  element.width = text.width + 2 * padding;
+  element.height = text.height + 2 * padding;
 };
 
 //
@@ -111,90 +167,160 @@ let currentSlide = function() {
   return null;
 }
 
-let marginBox = function(box) {
-  return { x: box.width * 0.05,
-           y: box.height * 0.05,
-           width: box.width * 0.90,
-           height: box.height * 0.90, };
+let noMarginBox = function(element) {
+  return { x: element.x,
+           y: element.y,
+           width: element.width,
+           height: element.height, };
+};
+
+let marginBox = function(element) {
+  return { x: element.width * 0.05,
+           y: element.height * 0.05,
+           width: element.width * 0.90,
+           height: element.height * 0.90, };
 };
 
 let relayoutSlideInBox = function(slide, box) {
   let props = getProperties(document, slide.slideDef);
+
+  layoutBackground(slide.background, box,
+                   props.background_scaling,
+                   props.background_gravity);
+
   let mbox = marginBox(box);
-  layoutText(mbox, slide.text, props.gravity);
-  slide.background.width = box.width;
-  slide.background.height = box.height;
+  let textBox = layoutText(slide.text, mbox, props.gravity);
+
+  layoutShading(slide.shading, textBox, box);
 };
 
 let blankSlide = function(slide) {
   slide.main.visible = !slide.main.visible;
 };
 
+let setSlideState = function(slide, state, animate) {
+  let props = getProperties(document, slide.slideDef);
+  let transition = props.transition[state];
+  Utils.forEachKeyVal(transition, function(actorName, actorProps) {
+    let actor = slide[actorName];
+    Utils.forEachKeyVal(actorProps, function(property, value) {
+      if (animate) {
+        actor.save_easing_state();
+        actor.set_easing_duration(props.transition.duration);
+        actor.set_easing_mode(value.animation);
+      }
+      actor[property] = value.value;
+      if (animate)
+        actor.restore_easing_state();
+    });
+  });
+};
+
 let loadSlide = function(index) {
   for (let i = 0; i < _slides.length; i++)
-    if (_slides[i].index == index)
-      return _slides[i];
+    if (_slides[i].index == index) {
+      _slides = _slides.concat(_slides.splice(i));
+      return _slides[_slides.length - 1];
+    }
 
   let slideDef = document.slides[index];
   let props = getProperties(document, slideDef);
-  let slide = { index: index,
-                slideDef: slideDef,
-                main: new Clutter.Actor({
-                  x_align: Clutter.ActorAlign.FILL,
-                  y_align: Clutter.ActorAlign.FILL,
-                  x_expand: true,
-                  y_expand: true,
-                }),
-                background: new Clutter.Actor({
-                  x_align: Clutter.ActorAlign.FILL,
-                  y_align: Clutter.ActorAlign.FILL,
-                  x_expand: true,
-                  y_expand: true,
-                  background_color: props['background-color'],
-                  content_gravity: props['background-gravity'],
-                }),
-                text: new Clutter.Text({
-                  text: slideDef.content.join('').trim(),
-                  font_name: props.font,
-                  color: props['text-color'],
-                  use_markup: props['use-markup'],
-                  line_alignment: props['text-align'],
-                }), };
+  let slide = {
+    index: index,
+    slideDef: slideDef,
+    main: new Clutter.Actor({
+      x_align: Clutter.ActorAlign.FILL,
+      y_align: Clutter.ActorAlign.FILL,
+      x_expand: true,
+      y_expand: true,
+      pivot_point: new Clutter.Point({x: 0.5, y: 0.5}),
+    }),
+    background: new Clutter.Actor({
+      background_color: props.background_color,
+      //pivot_point: new Clutter.Point({x: 0.5, y: 0.5}),
+    }),
+    shading: new Clutter.Actor({
+      background_color: props.shading_color,
+      opacity: props.shading_opacity,
+    }),
+    text: new Clutter.Text({
+      text: slideDef.content.join('').trim(),
+      font_name: props.font,
+      color: props.text_color,
+      use_markup: props.use_markup,
+      line_alignment: props.text_align,
+    }), };
 
   props.background.load();
   props.background.attachContent(slide.background);
 
   slide.main.add_actor(slide.background);
+  slide.main.add_actor(slide.shading);
   slide.main.add_actor(slide.text);
   stage.add_actor(slide.main);
 
-  slide.main.hide();
+  slide.main.show();
+  setSlideState(slide, 'pre', false);
 
   _slides.push(slide);
 
   return slide;
 };
 
-let loadSlides = function(index) {
-  let delta = Math.round(_maxLoadedSlides / 2),
-      low = Math.max(0, index - delta),
-      up = Math.min(document.slides.length - 1, low + _maxLoadedSlides);
+let slideRange = function(index) {
+  let delta = Math.round(_maxLoadedSlides / 2)
+  let low = Math.max(0, index - delta);
+  return {
+    low: low,
+    high: Math.min(document.slides.length - 1,
+                   low + _maxLoadedSlides - 1),
+  };
+};
 
-  for (let i = low; i < up; i++)
-    relayoutSlideInBox(loadSlide(i), stage);
+let loadSlides = function(index) {
+  // let range = slideRange(index);
+  // for (let i = range.low; i <= range.high; i++)
+  //   relayoutSlideInBox(loadSlide(i), stage);
+  relayoutSlideInBox(loadSlide(index), stage);
+};
+
+let pruneSlides = function() {
+  let range = slideRange(currentSlide().index);
+  let newSlides = [];
+  _slides.forEach(function (slide) {
+    if (slide.index >= range.low &&
+        slide.index <= range.high)
+      newSlides.push(slide);
+    else {
+      slide.main.destroy();
+      let props = getProperties(document, slide.slideDef);
+      props.background.unload();
+    }
+  });
+  log('prune done : ' + (_slides.length - newSlides.length) + ' index: ' + currentSlide().index);
+  _slides = newSlides;
 };
 
 let showSlide = function(index) {
   let old = currentSlide();
   if (old) {
-    old.main.hide();
+    if (old.index == index) return; // Same slide
+
+    setSlideState(old, old.index < index ? 'post' : 'pre', true);
+    let props = getProperties(document, old.slideDef);
+    props.background.setVisibility(false);
   }
 
-  loadSlide(index);
+  loadSlides(index);
   _currentSlide = index;
-  currentSlide().main.show();
+  let slide = currentSlide();
+  let props = getProperties(document, slide.slideDef);
+  setSlideState(slide, 'show', true);
+  props.background.setVisibility(true);
 
-  relayoutSlideInBox(currentSlide(), stage);
+  relayoutSlideInBox(slide, stage);
+
+  pruneSlides();
 };
 let previousSlide = function() {
   showSlide(Math.max(0, currentSlide().index - 1));
