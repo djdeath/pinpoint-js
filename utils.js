@@ -96,3 +96,9 @@ let forEachKeyVal = function(object, callback) {
       callback(k, object[k]);
   }
 };
+
+//
+
+let boxToString = function(box) {
+  return '' + box.width + 'x' + box.height + ' @ ' + box.x + 'x' + box.y;
+};
