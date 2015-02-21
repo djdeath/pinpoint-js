@@ -339,6 +339,10 @@ stage.connect('allocation-changed', function(actor, box, flags) {
 });
 
 stage.connect('destroy', function(actor) { Clutter.main_quit(); });
+stage.connect('button-press-event', function(actor, event) {
+  nextSlide();
+  return false;
+}.bind(this));
 stage.connect('key-press-event', function(actor, event) {
   switch (event.get_key_symbol()) {
   case Clutter.KEY_Up:
