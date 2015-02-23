@@ -249,10 +249,14 @@ let loadSlide = function(index) {
       color: props.text_color,
       use_markup: props.use_markup,
       line_alignment: props.text_align,
-    }), };
+    }),
+    relayout: function() {
+      relayoutSlideInBox(this, stage);
+    },
+  };
 
   props.background.load();
-  props.background.attachContent(slide.background);
+  props.background.attachContent(slide.background, slide);
 
   slide.main.add_actor(slide.background);
   slide.main.add_actor(slide.shading);

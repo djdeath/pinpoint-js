@@ -114,7 +114,10 @@ Video.prototype = {
   setVisibility: function(value) {
     this._player.set_playing(value);
   },
-  attachContent: function(actor) {
+  attachContent: function(actor, slide) {
     actor.content = this._content;
+    this._content.connect('size-change', function(content, width, height) {
+      slide.relayout();
+    });
   },
 };
