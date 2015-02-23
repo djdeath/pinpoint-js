@@ -91,6 +91,12 @@ let positionForGravity = function(position, container, gravity) {
 };
 
 let layoutBackground = function(element, box, scaling, gravities) {
+  if (!element.content) {
+    element.width = box.width;
+    element.height = box.height;
+    return;
+  }
+
   let [, w, h] = element.content.get_preferred_size();
   element.width = w;
   element.height = h;
