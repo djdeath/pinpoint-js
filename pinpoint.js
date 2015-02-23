@@ -209,6 +209,7 @@ let blankSlide = function(slide) {
 
 let setSlideState = function(slide, state, animate) {
   let props = getProperties(document, slide.slideDef);
+  props.background.setVisibility(state == 'show');
   let transition = props.transition[state];
   Utils.forEachKeyVal(transition, function(actorName, actorProps) {
     let actor = slide[actorName];
@@ -242,11 +243,9 @@ let loadSlide = function(index) {
       y_align: Clutter.ActorAlign.FILL,
       x_expand: true,
       y_expand: true,
-      pivot_point: new Clutter.Point({x: 0.5, y: 0.5}),
     }),
     background: new Clutter.Actor({
       background_color: props.background_color,
-      //pivot_point: new Clutter.Point({x: 0.5, y: 0.5}),
     }),
     shading: new Clutter.Actor({
       background_color: props.shading_color,
@@ -318,20 +317,13 @@ let showSlide = function(index) {
   let old = currentSlide();
   if (old) {
     if (old.index == index) return; // Same slide
-
     setSlideState(old, old.index < index ? 'post' : 'pre', true);
-    let props = getProperties(document, old.slideDef);
-    props.background.setVisibility(false);
   }
 
   loadSlides(index);
   _currentSlide = index;
   let slide = currentSlide();
-  let props = getProperties(document, slide.slideDef);
   setSlideState(slide, 'show', true);
-  props.background.setVisibility(true);
-
-  relayoutSlideInBox(slide, stage);
 
   pruneSlides();
 };
