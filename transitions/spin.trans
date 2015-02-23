@@ -1,0 +1,23 @@
+pre =>
+  background ->
+    rotation-angle-z linear(-360.0)
+    scale-x 0.01
+    scale-y linear(0.01)
+  main ->
+    opacity linear(0)
+
+show =>
+  background ->
+    rotation-angle-z linear(0.0)
+    scale-x linear(1.0)
+    scale-y linear(1.0)
+  main ->
+    opacity linear(255)
+
+post =>
+  background ->
+    rotation-angle-z linear(360.0)
+    scale-x linear(4.0)
+    scale-y linear(4.0)
+  main ->
+    opacity linear(4.0)

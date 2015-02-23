@@ -1,0 +1,11 @@
+pre =>
+  main ->
+    x linear(-$width)
+
+show =>
+  main ->
+    x linear(0)
+
+post =>
+  main ->
+    x linear($width)
