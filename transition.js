@@ -3,17 +3,18 @@ const Clutter = imports.gi.Clutter;
 const TransitionParser = imports.transitionParser;
 const Utils = imports.utils;
 
+let returnValue = function(val) { return function() { return val; }; };
 const Default = {
   duration: 250,
   pre: { main: { opacity: {
     animation: Clutter.AnimationMode.LINEAR,
-    value: 0, }, }, },
+    getValue: returnValue(0), }, }, },
   show: { main: { opacity: {
     animation: Clutter.AnimationMode.LINEAR,
-    value: 255, }, }, },
+    getValue: returnValue(255), }, }, },
   post: { main: { opacity: {
     animation: Clutter.AnimationMode.LINEAR,
-    value: 0, }, }, },
+    getValue: returnValue(0), }, }, },
 };
 
 let load = function(name) {

@@ -210,6 +210,15 @@ let blankSlide = function(slide) {
 let setSlideState = function(slide, state, animate) {
   let props = getProperties(document, slide.slideDef);
   props.background.setVisibility(state == 'show');
+
+  let ctx = { width: slide.main.width,
+              height: slide.main.height, };
+  let pv = slide.main.get_paint_volume();
+  if (pv) {
+    ctx.width = pv.get_width();
+    ctx.height = pv.get_height();
+  }
+
   let transition = props.transition[state];
   Utils.forEachKeyVal(transition, function(actorName, actorProps) {
     let actor = slide[actorName];
@@ -219,7 +228,7 @@ let setSlideState = function(slide, state, animate) {
         actor.set_easing_duration(props.transition.duration);
         actor.set_easing_mode(value.animation);
       }
-      actor[property] = value.value;
+      actor[property] = value.getValue(ctx);
       if (animate)
         actor.restore_easing_state();
     });

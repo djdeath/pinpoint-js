@@ -1,16 +1,20 @@
 const Utils = imports.utils;
 
 let Parser = ometa {
-  name = spaces <letter (letter | '-')+>,
-  number = spaces <'-'? digit+ ('.' digit+)?>:f -> parseFloat(f),
+  name = spaces <letter (letter | '-')*>,
+  number = spaces <'-'? digit+ ('.' digit+)?>:f -> function() { return parseFloat(f); },
+  expression = ( "-" -> (-1) |
+                 empty -> 1 ):m '$' name:n -> function(ctx) { return m * ctx[n]; },
+
+  value = number | expression,
 
   animation = name:a ?Utils.isAnimationMode(a) -> Utils.animationModeFromString(a),
 
   property :actor =
-    name:p ( animation:a "(" number:n ")" -> { a: a, n: n } |
-             number:n -> { a: Utils.animationModeFromString("linear"),
-                           n: n} ):v
-    addProperty(actor, p, { animation: v.a, value: v.n }),
+    name:p ( animation:a "(" value:v ")" -> { a: a, f: v } |
+             value:v -> { a: Utils.animationModeFromString("linear"),
+                          f: v } ):a
+    addProperty(actor, p, { animation: a.a, getValue: a.f }),
 
   actorState :state =
     name:n "->" newObject:ret property(ret)* addProperty(state, n, ret),
