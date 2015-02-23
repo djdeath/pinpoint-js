@@ -190,6 +190,9 @@ let marginBox = function(element) {
 let relayoutSlideInBox = function(slide, box) {
   let props = getProperties(document, slide.slideDef);
 
+  slide.main.width = box.width;
+  slide.main.height = box.height;
+
   layoutBackground(slide.background, box,
                    props.background_scaling,
                    props.background_gravity);
