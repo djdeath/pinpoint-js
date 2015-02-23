@@ -21,9 +21,15 @@ let load = function(name) {
   try {
     let [, source] = file.load_contents(null);
     source = '' + source;
-    let transition = TransitionParser.parse(source);
-    transition.duration = 250;
-    return transition;
+    try {
+      let transition = TransitionParser.parse(source);
+      transition.duration = 250;
+      return transition;
+    } catch (e) {
+      let pos = Utils.indexToPosition(source, e.idx);
+      log('Parsing error in transition ' + name +
+          ' : line ' + pos.line + ' offset ' + pos.offset);
+    }
   } catch (e) {
     log('Cannot load transition ' + name + ' : ' + e.message);
   }
