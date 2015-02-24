@@ -249,10 +249,6 @@ let loadSlide = function(index) {
     index: index,
     slideDef: slideDef,
     main: new Clutter.Actor({
-      x_align: Clutter.ActorAlign.FILL,
-      y_align: Clutter.ActorAlign.FILL,
-      x_expand: true,
-      y_expand: true,
     }),
     background: new Clutter.Actor({
       background_color: props.background_color,
