@@ -93,72 +93,69 @@ let positionForGravity = function(position, container, gravity) {
 
 let layoutBackground = function(element, box, scaling, gravities) {
   if (!element.content) {
-    element.width = box.width;
-    element.height = box.height;
-    return;
+    return { width: box.width,
+             height: box.height, };
   }
 
+  let ret = {};
   let [, w, h] = element.content.get_preferred_size();
-  element.width = w;
-  element.height = h;
-  if (w == 0 || h == 0) return;
+  ret.width = w;
+  ret.height = h;
+  if (w == 0 || h == 0) return ret;
 
   let w_scale = box.width / w,
       h_scale = box.height / h;
 
   if (scaling == 'fill') {
-      element.scale_x = element.scale_y = (w_scale > h_scale) ? w_scale : h_scale;
+      ret.scale_x = ret.scale_y = (w_scale > h_scale) ? w_scale : h_scale;
   } else if (scaling == 'fit') {
-    element.scale_x = element.scale_y = (w_scale < h_scale) ? w_scale : h_scale;
+    ret.scale_x = ret.scale_y = (w_scale < h_scale) ? w_scale : h_scale;
   } else if (scaling == 'unscaled') {
-    element.scale_x = element.scale_y = (w_scale < h_scale) ? w_scale : h_scale;
+    ret.scale_x = ret.scale_y = (w_scale < h_scale) ? w_scale : h_scale;
     if (element.scale_x > 1.0)
-      element.scale_x = element.scale_y = 1.0;
+      ret.scale_x = ret.scale_y = 1.0;
   } else if (scaling == 'stretch') {
-    element.scale_x = w_scale;
-    element.scale_y = h_scale;
+    ret.scale_x = w_scale;
+    ret.scale_y = h_scale;
   }
 
-  element.x = positionForGravity(element.width * element.scale_x,
-                                 { start: box.x, end: box.x + box.width, },
-                                 gravities[0]);
-  element.y = positionForGravity(element.height * element.scale_y,
-                                 { start: box.y, end: box.y + box.height, },
-                                 gravities[1]);
-
-  log('background=' + Utils.boxToString(element) + ' - box=' + Utils.boxToString(box));
-
+  ret.x = positionForGravity(ret.width * ret.scale_x,
+                             { start: box.x, end: box.x + box.width, },
+                             gravities[0]);
+  ret.y = positionForGravity(ret.height * ret.scale_y,
+                             { start: box.y, end: box.y + box.height, },
+                             gravities[1]);
+  return ret;
 };
 
 let layoutText = function(element, box, gravities) {
   //log('layout text in : ' + box.width + 'x' + box.height + ' @ ' + box.x + 'x' + box.y);
-  let x, y;
+  let ret = {};
   let [, , w, h] = element.get_preferred_size();
   let scale =
-      element.scale_x =
-      element.scale_y = Math.min(Math.min(1, box.width / w),
-                                 box.height / h);
-  element.x = positionForGravity(w * scale,
-                                 { start: box.x,
-                                   end: box.x + box.width, },
-                                 gravities[0]);
-  element.y = positionForGravity(h * scale,
-                                 { start: box.y,
-                                   end: box.y + box.height, },
-                                 gravities[1]);
-  return { x: element.x,
-           y: element.y,
-           width: element.width * scale,
-           height: element.height * scale, };
+      ret.scale_x =
+      ret.scale_y = Math.min(Math.min(1, box.width / w),
+                             box.height / h);
+  ret.x = positionForGravity(w * scale,
+                             { start: box.x,
+                               end: box.x + box.width, },
+                             gravities[0]);
+  ret.y = positionForGravity(h * scale,
+                             { start: box.y,
+                               end: box.y + box.height, },
+                             gravities[1]);
+  ret.width = w;
+  ret.height = h;
+
+  return ret;
 };
 
 let layoutShading = function(element, text, box) {
   let padding = 0.01 * box.width;
-
-  element.x = text.x - padding;
-  element.y = text.y - padding;
-  element.width = text.width + 2 * padding;
-  element.height = text.height + 2 * padding;
+  return { x: text.x - padding,
+           y: text.y - padding,
+           width: text.width + 2 * padding,
+           height: text.height + 2 * padding, };
 };
 
 //
@@ -174,13 +171,6 @@ let currentSlide = function() {
   return null;
 }
 
-let noMarginBox = function(element) {
-  return { x: element.x,
-           y: element.y,
-           width: element.width,
-           height: element.height, };
-};
-
 let marginBox = function(element) {
   return { x: element.width * 0.05,
            y: element.height * 0.05,
@@ -188,20 +178,33 @@ let marginBox = function(element) {
            height: element.height * 0.90, };
 };
 
-let relayoutSlideInBox = function(slide, box) {
-  let props = getProperties(document, slide.slideDef);
-
-  slide.main.width = box.width;
-  slide.main.height = box.height;
-
-  layoutBackground(slide.background, box,
-                   props.background_scaling,
-                   props.background_gravity);
-
+let computeSlideLayout = function(slide, box) {
   let mbox = marginBox(box);
-  let textBox = layoutText(slide.text, mbox, props.gravity);
+  let props = getProperties(document, slide.slideDef);
+  let layout = { main: { width: box.width, height: box.height } };
 
-  layoutShading(slide.shading, textBox, box);
+  layout.background = layoutBackground(slide.background, box,
+                                       props.background_scaling,
+                                       props.background_gravity);
+  layout.text = layoutText(slide.text, mbox, props.gravity);
+  layout.shading = layoutShading(slide.shading,
+                                 { x: layout.text.x,
+                                   y: layout.text.y,
+                                   width: layout.text.width * layout.text.scale_x,
+                                   height: layout.text.height * layout.text.scale_y, },
+                                 box);
+  return layout;
+};
+
+let applySlideLayout = function(slide, layout) {
+  for (let element in layout)
+    for (let property in layout[element])
+      slide[element][property] = layout[element][property];
+};
+
+let relayoutSlideInBox = function(slide, box) {
+  slide.layout = computeSlideLayout(slide, box);
+  applySlideLayout(slide, slide.layout);
 };
 
 let blankSlide = function(slide) {
