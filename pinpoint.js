@@ -54,6 +54,7 @@ addDefaultProperty(document, 'shading_opacity', 168);
 addDefaultProperty(document, 'shading_color', Utils.colorFromString('black'));
 
 document.properties['background'].load();
+// Make load/unload functions no-ops on default background
 document.properties['background'].load = function() {};
 document.properties['background'].unload = function() {};
 
