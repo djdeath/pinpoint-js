@@ -70,8 +70,8 @@ let getProperties = function(doc, slide) {
 };
 
 let stage = new Clutter.Stage({
-  width: 640,
-  height: 480,
+  width: 800,
+  height: 600,
   layout_manager: new Clutter.BinLayout(),
   user_resizable: true,
   background_color: Utils.colorFromString('black'),
