@@ -24,7 +24,7 @@ let load = function(name) {
     source = '' + source;
     try {
       let transition = TransitionParser.parse(source);
-      transition.duration = 250;
+      transition.duration = 1000;
       return transition;
     } catch (e) {
       let pos = Utils.indexToPosition(source, e.idx);
