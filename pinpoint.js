@@ -303,6 +303,12 @@ let loadSlides = function(index) {
   // for (let i = range.low; i <= range.high; i++)
   //   relayoutSlideInBox(loadSlide(i), stage);
   relayoutSlideInBox(loadSlide(index), stage);
+  _slides.sort(function(s1, s2) { return s1.index - s2.index; });
+  let previous = null;
+  _slides.forEach(function(slide, idx) {
+    stage.set_child_above_sibling(slide.main, previous);
+    previous = slide.main;
+  });
 };
 
 let pruneSlides = function() {
