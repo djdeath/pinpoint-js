@@ -232,7 +232,10 @@ let setSlideState = function(slide, state, animate) {
         actor.set_easing_duration(props.transition.duration);
         actor.set_easing_mode(value.animation);
       }
-      actor[property] = value.getValue(ctx);
+      if (state == 'show' && slide.layout[property])
+        actor[property] = slide.layout[property];
+      else
+        actor[property] = value.getValue(ctx);
       if (animate)
         actor.restore_easing_state();
     });
