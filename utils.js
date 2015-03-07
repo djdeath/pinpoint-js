@@ -3,13 +3,9 @@ const Gio = imports.gi.Gio;
 const Pango = imports.gi.Pango;
 
 let _directory = null;
-let setDirectory = function(directory) {
-  _directory = directory;
-};
+let setDirectory = function(directory) { _directory = directory; };
 
-let getFile = function(filename) {
-  return _directory.get_child(filename);
-};
+let getFile = function(filename) { return _directory.get_child(filename); };
 
 //
 let _textAlignments = {
@@ -20,9 +16,7 @@ let _textAlignments = {
 let isTextAlignment = function(str) {
   return _textAlignments.hasOwnProperty(str);
 };
-let textAlignmentFromString = function(str) {
-  return _textAlignments[str];
-};
+let textAlignmentFromString = function(str) { return _textAlignments[str]; };
 
 //
 
@@ -40,9 +34,7 @@ let _gravities = {
 let isGravity = function(str) {
   return _gravities.hasOwnProperty(str);
 };
-let gravityFromString = function(str) {
-  return _gravities[str];
-};
+let gravityFromString = function(str) { return _gravities[str]; };
 
 //
 
@@ -84,8 +76,7 @@ let indexToPosition = function(source, idx) {
       lineNum++;
     }
   }
-  return { line: lineNum + 1,
-           offset: idx - linePos };
+  return { line: lineNum + 1, offset: idx - linePos };
 };
 
 //
