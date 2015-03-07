@@ -37,20 +37,19 @@ let Parser = ometa {
   document = newDocument():d shell (headerProperty(d) | space+)* slide+:sds end -> { properties: d.properties, slides: sds }
 };
 
-let returnValue = function(value) { return function() { return value; }; };
 let identity = function(value) { return value; };
 let colorBackground = function(value) { return new Backgrounds.Color(Utils.colorFromString); };
 let parseFloatToOpacity = function(value) { return 255 * parseFloat(value); };
 
 Parser._keywords = {
-  "fill": { name: "background_scaling", getValue: returnValue('fill') },
-  "fit": { name: "background_scaling", getValue: returnValue('fit') },
-  "unscaled": { name: "background_scaling", getValue: returnValue('unscale') },
-  "stretch": { name: "background_scaling", getValue: returnValue('stretch') },
+  "fill": { name: "background_scaling", getValue: Utils.returnValue('fill') },
+  "fit": { name: "background_scaling", getValue: Utils.returnValue('fit') },
+  "unscaled": { name: "background_scaling", getValue: Utils.returnValue('unscale') },
+  "stretch": { name: "background_scaling", getValue: Utils.returnValue('stretch') },
   "bg-position": { name: "background_gravity", getValue: Utils.gravityFromString },
   "font": { name: "font", getValue: identity },
-  "markup": { name: "use_markup", getValue: returnValue(true) },
-  "no-markup": { name: "use_markup", getValue: returnValue(false) },
+  "markup": { name: "use_markup", getValue: Utils.returnValue(true) },
+  "no-markup": { name: "use_markup", getValue: Utils.returnValue(false) },
   "duration": { name: "duration", getValue: parseFloat },
   "text-color": { name: "text_color", getValue: Utils.colorFromString },
   "text-align": { name: "text_align", getValue: Utils.textAlignmentFromString },

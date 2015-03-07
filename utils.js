@@ -90,6 +90,8 @@ let indexToPosition = function(source, idx) {
 
 //
 
+let returnValue = function(value) { return function() { return value; }; };
+
 let forEachKeyVal = function(object, callback) {
   for (let k in object) {
     if (object.hasOwnProperty(k))
