@@ -90,6 +90,27 @@ let forEachKeyVal = function(object, callback) {
   }
 };
 
+let mergeObjects = function(level, obj1, obj2) {
+  if (obj1 === undefined) return obj2;
+  if (obj2 === undefined) return obj1;
+  if (level <= 0) return obj2;
+
+  let keys = {};
+  Object.keys(obj1).concat(Object.keys(obj2)).forEach(function(k) {
+    keys[k] = true;
+  });
+  let ret = {};
+  for (let i in keys) {
+    if (typeof obj1[i] === 'object')
+      ret[i] = mergeObjects(level - 1, obj1[i], obj2[i]);
+    else if (obj2[i] !== undefined)
+      ret[i] = obj2[i];
+    else
+      ret[i] = obj1[i];
+  }
+  return ret;
+};
+
 //
 
 let boxToString = function(box) {
