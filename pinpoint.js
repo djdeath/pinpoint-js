@@ -94,10 +94,11 @@ let positionForGravity = function(position, container, gravity) {
 let layoutBackground = function(element, box, scaling, gravities) {
   if (!element.content) {
     return { width: box.width,
-             height: box.height, };
+             height: box.height,
+             opacity: 255, };
   }
 
-  let ret = {};
+  let ret = { opacity: 255, };
   let [, w, h] = element.content.get_preferred_size();
   ret.width = w;
   ret.height = h;
@@ -129,8 +130,7 @@ let layoutBackground = function(element, box, scaling, gravities) {
 };
 
 let layoutText = function(element, box, gravities) {
-  //log('layout text in : ' + box.width + 'x' + box.height + ' @ ' + box.x + 'x' + box.y);
-  let ret = {};
+  let ret = { opacity: 255, };
   let [, , w, h] = element.get_preferred_size();
   let scale =
       ret.scale_x =
@@ -150,12 +150,13 @@ let layoutText = function(element, box, gravities) {
   return ret;
 };
 
-let layoutShading = function(element, text, box) {
+let layoutShading = function(element, text, box, props) {
   let padding = 0.01 * box.width;
   return { x: text.x - padding,
            y: text.y - padding,
            width: text.width + 2 * padding,
-           height: text.height + 2 * padding, };
+           height: text.height + 2 * padding,
+           opacity: props.shading_opacity, };
 };
 
 //
@@ -171,6 +172,11 @@ let currentSlide = function() {
   return null;
 }
 
+let slideIndexToState = function(index) {
+  return (index < _currentSlide ? 'pre' :
+          (index > _currentSlide ? 'post' : 'show'));
+};
+
 let marginBox = function(element) {
   return { x: element.width * 0.05,
            y: element.height * 0.05,
@@ -181,7 +187,7 @@ let marginBox = function(element) {
 let computeSlideLayout = function(slide, box) {
   let mbox = marginBox(box);
   let props = getProperties(document, slide.slideDef);
-  let layout = { main: { width: box.width, height: box.height } };
+  let layout = { main: { width: box.width, height: box.height, opacity: 255 } };
 
   layout.background = layoutBackground(slide.background, box,
                                        props.background_scaling,
@@ -192,7 +198,14 @@ let computeSlideLayout = function(slide, box) {
                                    y: layout.text.y,
                                    width: layout.text.width * layout.text.scale_x,
                                    height: layout.text.height * layout.text.scale_y, },
-                                 box);
+                                 box,
+                                 props);
+
+  for (let a in layout)
+    for (let k in layout[a])
+      layout[a][k] = { animation: Clutter.AnimationMode.LINEAR,
+                       getValue: Utils.returnValue(layout[a][k]) };
+
   return layout;
 };
 
@@ -202,28 +215,24 @@ let applySlideLayout = function(slide, layout) {
       slide[element][property] = layout[element][property];
 };
 
-let relayoutSlideInBox = function(slide, box) {
-  slide.layout = computeSlideLayout(slide, box);
-  applySlideLayout(slide, slide.layout);
-};
-
 let blankSlide = function(slide) {
   slide.main.visible = !slide.main.visible;
 };
 
 let setSlideState = function(slide, state, animate) {
+  //log('======> slide=' + slide.index + ' state=' + state);
   let props = getProperties(document, slide.slideDef);
   props.background.setVisibility(state == 'show');
 
-  let ctx = { width: slide.main.width,
-              height: slide.main.height, };
-  let pv = slide.main.get_paint_volume();
-  if (pv) {
-    ctx.width = pv.get_width();
-    ctx.height = pv.get_height();
-  }
+  // TODO: We should compute the max of all elements.
+  let ctx = { width: slide.background.width * slide.background.scale_x,
+              height: slide.background.height * slide.background.scale_y, };
 
-  let transition = props.transition[state];
+  let transition;
+  if (state == 'show')
+    transition = Utils.mergeObjects(3, props.transition[state], slide.layout);
+  else
+    transition = Utils.mergeObjects(3, slide.layout, props.transition[state]);
   Utils.forEachKeyVal(transition, function(actorName, actorProps) {
     let actor = slide[actorName];
     Utils.forEachKeyVal(actorProps, function(property, value) {
@@ -232,21 +241,30 @@ let setSlideState = function(slide, state, animate) {
         actor.set_easing_duration(props.transition.duration);
         actor.set_easing_mode(value.animation);
       }
-      if (state == 'show' && slide.layout[property])
-        actor[property] = slide.layout[property];
-      else
-        actor[property] = value.getValue(ctx);
+      actor[property] = value.getValue(ctx);
       if (animate)
         actor.restore_easing_state();
     });
   });
 };
 
+let relayoutSlideInBox = function(slide, box) {
+  slide.layout = computeSlideLayout(slide, box);
+  let pv = slide.main.get_paint_volume();
+  setSlideState(slide, slideIndexToState(slide.index), false);
+  let ppv = slide.main.get_paint_volume();
+  if (pv == null || ppv == null ||
+      pv.get_width() != ppv.get_width() ||
+      pv.get_height() != ppv.get_height()) {
+    setSlideState(slide, slideIndexToState(slide.index), false);
+  }
+};
+
+
 let loadSlide = function(index) {
   for (let i = 0; i < _slides.length; i++)
     if (_slides[i].index == index) {
-      _slides = _slides.concat(_slides.splice(i));
-      return _slides[_slides.length - 1];
+      return _slides[i];
     }
 
   let slideDef = document.slides[index];
@@ -261,7 +279,6 @@ let loadSlide = function(index) {
     }),
     shading: new Clutter.Actor({
       background_color: props.shading_color,
-      opacity: props.shading_opacity,
     }),
     text: new Clutter.Text({
       text: slideDef.content.join('').trim(),
@@ -282,9 +299,7 @@ let loadSlide = function(index) {
   slide.main.add_actor(slide.shading);
   slide.main.add_actor(slide.text);
   stage.add_actor(slide.main);
-
   slide.main.show();
-  setSlideState(slide, 'pre', false);
 
   _slides.push(slide);
 
@@ -302,10 +317,11 @@ let slideRange = function(index) {
 };
 
 let loadSlides = function(index) {
-  // let range = slideRange(index);
-  // for (let i = range.low; i <= range.high; i++)
-  //   relayoutSlideInBox(loadSlide(i), stage);
-  relayoutSlideInBox(loadSlide(index), stage);
+  let range = slideRange(index);
+  for (let i = range.low; i <= range.high; i++) {
+    let slide = loadSlide(i);
+    relayoutSlideInBox(slide, stage);
+  }
   _slides.sort(function(s1, s2) { return s1.index - s2.index; });
   let previous = null;
   _slides.forEach(function(slide, idx) {
@@ -332,13 +348,16 @@ let pruneSlides = function() {
 };
 
 let showSlide = function(index) {
-  let old = currentSlide();
-  if (old) {
-    if (old.index == index) return; // Same slide
-    setSlideState(old, old.index < index ? 'post' : 'pre', true);
-  }
+  if (_currentSlide == index) return;
 
   loadSlides(index);
+
+  let old = currentSlide();
+  if (old) {
+    setSlideState(old, 'show', false);
+    setSlideState(old, old.index < index ? 'pre' : 'post', true);
+  }
+
   _currentSlide = index;
   let slide = currentSlide();
   setSlideState(slide, 'show', true);
@@ -381,7 +400,6 @@ stage.connect('key-press-event', function(actor, event) {
   return false;
 }.bind(this));
 
-loadSlides(0);
 showSlide(0);
 
 Clutter.main();
