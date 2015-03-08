@@ -161,7 +161,7 @@ let layoutShading = function(element, text, box, props) {
 
 //
 let _slides = [];
-let _maxLoadedSlides = 5;
+let _maxLoadedSlides = 6;
 
 //
 let _currentSlide = -1;
@@ -219,8 +219,8 @@ let setSlideState = function(slide, state, animate) {
   props.background.setVisibility(state == 'show');
 
   // TODO: We should compute the max of all elements.
-  let ctx = { width: slide.background.width * slide.background.scale_x,
-              height: slide.background.height * slide.background.scale_y, };
+  let ctx = { width: Math.max(slide.background.width * slide.background.scale_x, stage.width),
+              height: Math.max(slide.background.height * slide.background.scale_y, stage.height) };
 
   let transition;
   if (state == 'show')
@@ -253,7 +253,6 @@ let relayoutSlideInBox = function(slide, box, animate) {
     setSlideState(slide, slideIndexToState(slide.index), animate);
   }
 };
-
 
 let loadSlide = function(index) {
   for (let i = 0; i < _slides.length; i++)
@@ -313,7 +312,7 @@ let loadSlides = function(index, animate) {
   let range = slideRange(index);
   for (let i = range.low; i <= range.high; i++) {
     let slide = loadSlide(i);
-    relayoutSlideInBox(slide, stage, Math.abs(index - i) <= 1);
+    relayoutSlideInBox(slide, stage, Math.abs(index - i) <= 1 ? animate : false);
   }
   _slides.sort(function(s1, s2) { return s1.index - s2.index; });
   let previous = null;
@@ -340,27 +339,25 @@ let pruneSlides = function() {
   _slides = newSlides;
 };
 
-let showSlide = function(index) {
+let showSlide = function(index, animate) {
   if (_currentSlide == index) return;
 
   _currentSlide = index;
-  loadSlides(index, true);
-
+  loadSlides(index, animate);
   pruneSlides();
 };
 let previousSlide = function() {
-  showSlide(Math.max(0, currentSlide().index - 1));
+  showSlide(Math.max(0, currentSlide().index - 1), true);
 };
 let nextSlide = function() {
-  showSlide(Math.min(document.slides.length - 1, currentSlide().index + 1));
+  showSlide(Math.min(document.slides.length - 1, currentSlide().index + 1), true);
 };
 
 
 stage.connect('allocation-changed', function(actor, box, flags) {
   let b = { x: box.x1, y: box.y1, width: box.get_width(), height: box.get_height(), };
   Mainloop.timeout_add(0, function() {
-    relayoutSlideInBox(currentSlide(), b);
-    return false;
+    loadSlides(_currentSlide, false);
   }.bind(this));
 });
 
@@ -384,6 +381,6 @@ stage.connect('key-press-event', function(actor, event) {
   return false;
 }.bind(this));
 
-showSlide(0);
+showSlide(0, false);
 
 Clutter.main();
