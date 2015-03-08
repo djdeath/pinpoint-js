@@ -209,12 +209,6 @@ let computeSlideLayout = function(slide, box) {
   return layout;
 };
 
-let applySlideLayout = function(slide, layout) {
-  for (let element in layout)
-    for (let property in layout[element])
-      slide[element][property] = layout[element][property];
-};
-
 let blankSlide = function(slide) {
   slide.main.visible = !slide.main.visible;
 };
