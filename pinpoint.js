@@ -220,7 +220,7 @@ let blankSlide = function(slide) {
 };
 
 let setSlideState = function(slide, state, animate) {
-  //log('======> slide=' + slide.index + ' state=' + state);
+  //log('======> slide=' + slide.index + ' state=' + state + ' animate=' + animate);
   let props = getProperties(document, slide.slideDef);
   props.background.setVisibility(state == 'show');
 
@@ -248,15 +248,15 @@ let setSlideState = function(slide, state, animate) {
   });
 };
 
-let relayoutSlideInBox = function(slide, box) {
+let relayoutSlideInBox = function(slide, box, animate) {
   slide.layout = computeSlideLayout(slide, box);
   let pv = slide.main.get_paint_volume();
-  setSlideState(slide, slideIndexToState(slide.index), false);
+  setSlideState(slide, slideIndexToState(slide.index), animate);
   let ppv = slide.main.get_paint_volume();
   if (pv == null || ppv == null ||
       pv.get_width() != ppv.get_width() ||
       pv.get_height() != ppv.get_height()) {
-    setSlideState(slide, slideIndexToState(slide.index), false);
+    setSlideState(slide, slideIndexToState(slide.index), animate);
   }
 };
 
@@ -288,7 +288,7 @@ let loadSlide = function(index) {
       line_alignment: props.text_align,
     }),
     relayout: function() {
-      relayoutSlideInBox(this, stage);
+      relayoutSlideInBox(this, stage, false);
     },
   };
 
@@ -307,20 +307,19 @@ let loadSlide = function(index) {
 };
 
 let slideRange = function(index) {
-  let delta = Math.round(_maxLoadedSlides / 2)
-  let low = Math.max(0, index - delta);
-  return {
-    low: low,
-    high: Math.min(document.slides.length - 1,
-                   low + _maxLoadedSlides - 1),
-  };
+  let delta = Math.round(_maxLoadedSlides / 2);
+  let ret = { low: index - delta, high: index + delta };
+  ret.low = Math.max(0, ret.low);
+  ret.high = Math.min(document.slides.length - 1, ret.low + 2 * delta + 1);
+  ret.low = Math.max(0, ret.high - (2 * delta + 1));
+  return ret;
 };
 
-let loadSlides = function(index) {
+let loadSlides = function(index, animate) {
   let range = slideRange(index);
   for (let i = range.low; i <= range.high; i++) {
     let slide = loadSlide(i);
-    relayoutSlideInBox(slide, stage);
+    relayoutSlideInBox(slide, stage, Math.abs(index - i) <= 1);
   }
   _slides.sort(function(s1, s2) { return s1.index - s2.index; });
   let previous = null;
@@ -350,17 +349,8 @@ let pruneSlides = function() {
 let showSlide = function(index) {
   if (_currentSlide == index) return;
 
-  loadSlides(index);
-
-  let old = currentSlide();
-  if (old) {
-    setSlideState(old, 'show', false);
-    setSlideState(old, old.index < index ? 'pre' : 'post', true);
-  }
-
   _currentSlide = index;
-  let slide = currentSlide();
-  setSlideState(slide, 'show', true);
+  loadSlides(index, true);
 
   pruneSlides();
 };
