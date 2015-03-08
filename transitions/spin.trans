@@ -20,4 +20,4 @@ post =>
     scale-x linear(4.0)
     scale-y linear(4.0)
   main ->
-    opacity linear(4.0)
+    opacity linear(0.0)
