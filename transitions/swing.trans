@@ -1,0 +1,14 @@
+pre =>
+  main ->
+    rotation-angle-x linear(90)
+    opacity linear(0)
+
+show =>
+  main ->
+    rotation-angle-x linear(0)
+    opacity linear(255)
+
+post =>
+  main ->
+    rotation-angle-x linear(0)
+    opacity linear(0)

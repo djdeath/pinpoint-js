@@ -1,0 +1,14 @@
+pre =>
+  main ->
+    x linear($width)
+    opacity linear(0)
+
+show =>
+  main ->
+    x linear(0)
+    opacity linear(255)
+
+post =>
+  main ->
+    x linear(-$width)
+    opacity linear(0)

@@ -1,0 +1,23 @@
+pre =>
+  main ->
+    opacity linear(0)
+  text ->
+    y linear($height)
+  shading ->
+    y linear($height)
+
+show =>
+  main ->
+    opacity linear(255)
+  text ->
+    y linear(0)
+  shading ->
+    y linear(0)
+
+post =>
+  main ->
+    opacity linear(0)
+  text ->
+    y linear(-$height)
+  shading ->
+    y linear(-$height)
