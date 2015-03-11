@@ -7,6 +7,8 @@ pre =>
   text ->
     scale-x linear(0.01)
     scale-y linear(0.01)
+    pivot-point-x none(0.5)
+    pivot-point-y none(0.5)
     rotation-angle-z linear(-360.0)
 
 show =>
@@ -18,6 +20,8 @@ show =>
   text ->
     scale-x linear(1.0)
     scale-y linear(1.0)
+    pivot-point-x none(0.5)
+    pivot-point-y none(0.5)
     rotation-angle-z linear(0)
 
 post =>
@@ -29,4 +33,6 @@ post =>
   text ->
     scale-x linear(4.0)
     scale-y linear(4.0)
+    pivot-point-x none(0.5)
+    pivot-point-y none(0.5)
     rotation-angle-z linear(360.0)
