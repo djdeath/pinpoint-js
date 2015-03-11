@@ -10,5 +10,5 @@ show =>
 
 post =>
   main ->
-    rotation-angle-x linear(0)
+    rotation-angle-x linear(-90)
     opacity linear(0)
