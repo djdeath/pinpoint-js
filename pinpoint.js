@@ -230,13 +230,13 @@ let setSlideState = function(slide, state, animate) {
   Utils.forEachKeyVal(transition, function(actorName, actorProps) {
     let actor = slide[actorName];
     Utils.forEachKeyVal(actorProps, function(property, value) {
-      if (animate) {
+      if (animate && value.animation > 0) {
         actor.save_easing_state();
         actor.set_easing_duration(props.transition.duration);
         actor.set_easing_mode(value.animation);
       }
       actor[property] = value.getValue(ctx);
-      if (animate)
+      if (animate && value.animation > 0)
         actor.restore_easing_state();
     });
   });

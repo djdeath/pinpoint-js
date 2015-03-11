@@ -40,10 +40,11 @@ let gravityFromString = function(str) { return _gravities[str]; };
 
 let isAnimationMode = function(str) {
   let s = str.toUpperCase().replace('-', '_');
-  return Clutter.AnimationMode[s] != undefined;
+  return Clutter.AnimationMode[s] != undefined || str == 'none';
 };
 
 let animationModeFromString = function(str) {
+  if (str == 'none') return 0;
   let s = str.toUpperCase().replace('-', '_');
   return Clutter.AnimationMode[s];
 };
