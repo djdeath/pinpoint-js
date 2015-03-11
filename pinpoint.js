@@ -254,6 +254,28 @@ let relayoutSlideInBox = function(slide, box, animate) {
   }
 };
 
+let _pivotPointAccessor = function(c) {
+  const prop = 'pivot-point';
+  return {
+    get: function() { return this[prop][c]; },
+    set: function(v) { let p = this[prop]; p[c] = v; this[prop] = p; },
+    enumerable: true,
+    configurable: true
+  };
+};
+
+let _create = function(klass, props) {
+  let actor = new klass(props);
+  Object.defineProperty(actor, 'pivot_point_x', _pivotPointAccessor('x'));
+  Object.defineProperty(actor, 'pivot-point-x', _pivotPointAccessor('x'));
+  Object.defineProperty(actor, 'pivot_point_y', _pivotPointAccessor('y'));
+  Object.defineProperty(actor, 'pivot-point-y', _pivotPointAccessor('y'));
+  return actor;
+};
+
+let createActor = function(props) { return _create(Clutter.Actor, props); };
+let createText = function(props) { return _create(Clutter.Text, props); };
+
 let loadSlide = function(index) {
   for (let i = 0; i < _slides.length; i++)
     if (_slides[i].index == index) {
@@ -265,15 +287,10 @@ let loadSlide = function(index) {
   let slide = {
     index: index,
     slideDef: slideDef,
-    main: new Clutter.Actor({
-    }),
-    background: new Clutter.Actor({
-      background_color: props.background_color,
-    }),
-    shading: new Clutter.Actor({
-      background_color: props.shading_color,
-    }),
-    text: new Clutter.Text({
+    main: createActor({}),
+    background: createActor({ background_color: props.background_color, }),
+    shading: createActor({ background_color: props.shading_color, }),
+    text: createText({
       text: slideDef.content.join('').trim(),
       font_name: props.font,
       color: props.text_color,
