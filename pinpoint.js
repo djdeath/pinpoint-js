@@ -173,8 +173,8 @@ let currentSlide = function() {
 }
 
 let slideIndexToState = function(index) {
-  return (index < _currentSlide ? 'pre' :
-          (index > _currentSlide ? 'post' : 'show'));
+  return (index < _currentSlide ? 'post' :
+          (index > _currentSlide ? 'pre' : 'show'));
 };
 
 let marginBox = function(element) {
