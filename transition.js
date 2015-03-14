@@ -5,6 +5,7 @@ const Utils = imports.utils;
 
 let returnValue = function(val) { return function() { return val; }; };
 const Default = {
+  name: 'default',
   duration: 250,
   pre: { main: { opacity: {
     animation: Clutter.AnimationMode.LINEAR,
@@ -25,6 +26,7 @@ let load = function(name) {
     try {
       let transition = TransitionParser.parse(source);
       transition.duration = 1000;
+      transition.name = name;
       return transition;
     } catch (e) {
       let pos = Utils.indexToPosition(source, e.idx);
