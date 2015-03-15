@@ -3,7 +3,7 @@ pre =>
     pivot-point-x none(0.5)
     pivot-point-y none(0.5)
     rotation-angle-z linear(-360.0)
-    scale-x 0.01
+    scale-x linear(0.01)
     scale-y linear(0.01)
   main ->
     opacity linear(0)

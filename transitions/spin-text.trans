@@ -1,3 +1,5 @@
+duration = 800
+
 pre =>
   main ->
     opacity linear(0)

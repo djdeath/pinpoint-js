@@ -25,7 +25,7 @@ let load = function(name) {
     source = '' + source;
     try {
       let transition = TransitionParser.parse(source);
-      transition.duration = 1000;
+      if (!transition.duration) transition.duration = 800;
       transition.name = name;
       return transition;
     } catch (e) {
