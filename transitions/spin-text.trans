@@ -1,40 +1,33 @@
 duration = 800
 
+default =>
+  background ->
+    pivot-point-x none(0.5)
+    pivot-point-y none(0.5)
+  text ->
+    pivot-point-x none(0.5)
+    pivot-point-y none(0.5)
+
 pre =>
   main ->
     opacity linear(0)
-  background ->
-    scale-x linear(0.01)
-    scale-y linear(0.01)
   text ->
     scale-x linear(0.01)
     scale-y linear(0.01)
-    pivot-point-x none(0.5)
-    pivot-point-y none(0.5)
     rotation-angle-z linear(-360.0)
 
 show =>
   main ->
     opacity linear(255)
-  background ->
-    scale-x linear(1.0)
-    scale-y linear(1.0)
   text ->
     scale-x linear(1.0)
     scale-y linear(1.0)
-    pivot-point-x none(0.5)
-    pivot-point-y none(0.5)
     rotation-angle-z linear(0)
 
 post =>
   main ->
     opacity linear(0)
-  background ->
-    scale-x linear(4.0)
-    scale-y linear(4.0)
   text ->
     scale-x linear(4.0)
     scale-y linear(4.0)
-    pivot-point-x none(0.5)
-    pivot-point-y none(0.5)
     rotation-angle-z linear(360.0)

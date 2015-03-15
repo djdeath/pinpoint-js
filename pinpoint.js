@@ -224,9 +224,13 @@ let setSlideState = function(slide, state, animate) {
 
   let transition;
   if (state == 'show')
-    transition = Utils.mergeObjects(3, props.transition[state], slide.layout);
+    transition = Utils.mergeObjects(3, props.transition['default'],
+                                    Utils.mergeObjects(3, props.transition[state],
+                                                       slide.layout));
   else
-    transition = Utils.mergeObjects(3, slide.layout, props.transition[state]);
+    transition = Utils.mergeObjects(3, slide.layout,
+                                    Utils.mergeObjects(3, props.transition['default'],
+                                                       props.transition[state]));
   Utils.forEachKeyVal(transition, function(actorName, actorProps) {
     let actor = slide[actorName];
     Utils.forEachKeyVal(actorProps, function(property, value) {
