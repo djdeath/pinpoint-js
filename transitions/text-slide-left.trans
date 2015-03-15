@@ -1,0 +1,25 @@
+duration = 1000
+
+pre =>
+  main ->
+    opacity linear(0)
+  text ->
+    x linear(-$width)
+  shading ->
+    x linear(-$width)
+
+show =>
+  main ->
+    opacity linear(255)
+  text ->
+    x linear(0)
+  shading ->
+    x linear(0)
+
+post =>
+  main ->
+    opacity linear(0)
+  text ->
+    x linear($width)
+  shading ->
+    x linear($width)
